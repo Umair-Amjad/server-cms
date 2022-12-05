@@ -90,16 +90,49 @@ router.get("/Collection", (req, res) => {
 
 
 router.get("/Collection/graph", (req, res) => {
-  const sqlinsert = `SELECT SUM(paid) as montlyPaidGrapgh ,YEAR(date) as year,
-MONTH(date) as month FROM feecollection  group by YEAR(date), MONTH(date)
- order by YEAR(date), MONTH(date) `;
+  const id=req.query
+  console.log(id);
+  const sqlinsert = `SELECT
+    SUM(paid) AS montlyPaidGrapgh,
+    YEAR(DATE) AS YEAR,
+    MONTH(DATE) AS month
+FROM
+    feecollection
+  WHERE YEAR(DATE) =${id.yearid}
+  
+GROUP BY
+    YEAR(DATE),
+    MONTH(DATE)
+ORDER BY
+    YEAR(DATE),
+    MONTH(DATE) `;
   con.query(sqlinsert, (er, result) => {
     const result2 = JSON.stringify(result);
     res.send(result2);
   });
 });
 
-
+router.get("/Collection/graphs", (req, res) => {
+  const id= req.query;
+  console.log(id)
+  const sqlinsert = `SELECT
+    SUM(paid) AS montlyPaidGrapgh,
+    YEAR(DATE) AS YEAR,
+    MONTH(DATE) AS month
+FROM
+    feecollection
+  WHERE YEAR(DATE) =${id.yearid}
+GROUP BY
+    YEAR(DATE),
+    MONTH(DATE)
+ORDER BY
+    YEAR(DATE),
+    MONTH(DATE) `;
+  con.query(sqlinsert, (er, result) => {
+    const result2 = JSON.stringify(result);
+    res.send(result2);
+  });
+});
 router.delete("/delete", (req, res) => {
   const Id = req.body.id;
   // console.log(id)

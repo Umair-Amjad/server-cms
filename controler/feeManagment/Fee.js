@@ -234,7 +234,6 @@ router.post("/fee/collecetion", (req, res) => {
 
 router.get("/single/:rollno", (req, res) => {
   const feeSingleDate = req.params;
-  console.log(feeSingleDate);
   const sqlinsert = `SELECT * FROM  feecollection WHERE rollno=${feeSingleDate.rollno}`;
 
   con.query(sqlinsert, (err, result) => {

@@ -5,6 +5,7 @@ const date = require("date-and-time");
 router.use(cors());
 
 var con = require("../../db/Db_connection");
+const moment = require("moment/moment");
 
 router.get("/api/attendence", (req, res) => {
   const params = req.query;
@@ -59,6 +60,8 @@ WHERE
 
 router.post("/attendence/post", (req, res) => {
   const attend = req.body;
+  const d = date.format(new Date(attend.date), "YYYY/MM/DD");
+
   // const data = {
   //   classid: 15,
   //   sectionid: 1,
@@ -88,7 +91,7 @@ router.post("/attendence/post", (req, res) => {
       res.send({ message: "Update Taken", status: 403 });
     } else {
       attend.attendence_list.forEach((ele) => {
-        const sqlinsert = `INSERT INTO attendence (rollno,classid,sectionid,attendence_list,date) VALUES ('${ele.rollno}','${attend.classid}','${attend.sectionid}','${ele.absentPresent}','${attend.date}')`;
+        const sqlinsert = `INSERT INTO attendence (rollno,classid,sectionid,attendence_list,date) VALUES ('${ele.rollno}','${attend.classid}','${attend.sectionid}','${ele.absentPresent}','${d}')`;
         con.query(sqlinsert, (err, result) => {
           if (err) throw err;
         });
@@ -102,9 +105,42 @@ router.post("/attendence/post", (req, res) => {
   // con.query(sqlinsert,(err,result)=>{
   //   if(err) throw err
 });
-//   };
-// });
-// LEFT JOIN students s ON att.rollno = s.rollno
-// s.name,
+
+router.get("/total-attendence-detail", (req, res) => {
+  const rollno = req.query;
+  const Dates = req.query;
+  const endDates = date.format(new Date(Dates.endDate), "YYYY/MM/DD");
+  const startDates = date.format(new Date(Dates.startDate), "YYYY/MM/DD");
+
+  const sqlinsert2 = `SELECT att.rollno, ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 1 AND att2.rollno = att.rollno AND att2.date BETWEEN "${startDates}" AND "${endDates}" ) as 'present', ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 2 AND att2.rollno = att.rollno AND att2.date BETWEEN "${startDates}" AND "${endDates}" ) as 'absent', ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 3 AND att2.rollno = att.rollno AND att2.date BETWEEN "${startDates}" AND "${endDates}") as 'late', ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 4 AND att2.rollno = att.rollno AND att2.date BETWEEN "${startDates}" AND "${endDates}") as 'leave' FROM attendence att WHERE att.date BETWEEN  "${startDates}" AND "${endDates}" AND att.rollno = ${rollno.rollNo} GROUP BY att.rollno`;
+  con.query(sqlinsert2, (err, result) => {
+    if(err) throw err
+    if (result == "") {
+      res.send({ message: "no data" });
+    } else {
+      res.send(result);
+    }
+  });
+  return;
+  const sqlinsert = `
+  
+  SELECT
+    att.rollno,
+    ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 1 AND att2.rollno = att.rollno AND att2.date BETWEEN ${startDates} AND ${endDates} ) as 'present',
+    ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 2 AND att2.rollno = att.rollno AND att2.date BETWEEN ${startDates} AND ${endDates} ) as 'absent',
+    ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 3 AND att2.rollno = att.rollno AND att2.date BETWEEN ${startDates} AND ${endDates}) as 'late',
+    ( SELECT COUNT(*) FROM attendence att2 WHERE att2.attendence_list = 4 AND att2.rollno = att.rollno AND att2.date BETWEEN ${startDates} AND ${endDates}) as 'leave'
+    FROM
+        attendence att
+        WHERE att.date BETWEEN ${startDates} AND ${endDates} AND att.rollno = ${rollno.rollNo}
+    GROUP BY
+        att.rollno`;
+  con.query(sqlinsert, (err, result) => {
+    // res.send(sqlinsert)
+    // return
+    console.log(result);
+    res.send(result);
+  });
+});
 
 module.exports = router;
