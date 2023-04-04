@@ -5,31 +5,26 @@ const router = express.Router();
 router.use(cors());
 
 var con = require("../../db/Db_connection");
+const { verifyToken } = require("../Middleware/Jwt");
 //Student API
-// router.post("/admission_form", (req, res) => {
-//   const admission = req.body;
-//   const sqlinsert = `INSERT INTO students (name,lname,fname,faccupation,dob,rollno,gender,section,religion,addid,admissiondate,phone,email,address,clas) VALUES ('${admission.name}','${admission.lname}','${admission.fname}','${admission.faccupation}','${admission.dob}','${admission.rollno}','${admission.gender}','${admission.section}','${admission.religion}','${admission.addid}','${admission.admissiondate}','${admission.phone}','${admission.email}','${admission.address}','${admission.clas}')`;
 
-//   console.log(admission);
-//   con.query(sqlinsert, (error, result) => {
-//     // console.log("resu", result);
-//     res.send("record successfully inserted");
-//     console.log(error);
-//   });
-// });
+router.get("/list",verifyToken, (req, res) => {
 
-router.get("/list", (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+  console.log(data.user.id)
+
   // res.send("hello")
-  const sqlinsert =
-    "SELECT stu.*, sec.name as section ,cl.className as class  FROM `students`  stu LEFT JOIN sections sec ON stu.sectionid=sec.id LEFT JOIN class cl ON stu.classid=cl.id";
+  const sqlinsert = `SELECT stu.*, sec.name as section ,cl.className as class  FROM students  stu LEFT JOIN sections sec ON stu.sectionid=sec.id LEFT JOIN class cl ON stu.classid=cl.id WHERE stu.status=1 AND stu.CollegeID=${data.user.id}`;
   con.query(sqlinsert, (err, result) => {
-    // console.log(result);
+    console.log(sqlinsert);
     const result2 = JSON.stringify(result);
     res.send(result2);
   });
 });
 
-router.get("/total", (req, res) => {
+router.get("/total",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
   const obj = {
     studentCount: 0,
     teacherCount: 0,
@@ -37,40 +32,52 @@ router.get("/total", (req, res) => {
     totalPaid: 0,
     totalBalance: 0,
   };
-  const sqlinsert = "SELECT count(*) as total FROM students";
+  const sqlinsert = `SELECT count(*) as total FROM students WHERE status=1 AND CollegeID=${data.user.id}`;
   con.query(sqlinsert, (err, result) => {
     obj.studentCount = result[0].total;
-    const sqlinsert2 = "SELECT count(*) as total1 FROM teachers";
+    const sqlinsert2 = `SELECT count(*) as total1 FROM teachers WHERE activation_status=1 AND CollegeID=${data.user.id}`;
     con.query(sqlinsert2, (err, result) => {
       obj.teacherCount = result[0].total1;
-      const sqlinsert3 = "SELECT count(*) as total2 FROM transport";
+      const sqlinsert3 =
+        `SELECT count(*) as total2 FROM transport WHERE status=1 AND CollegeID=${data.user.id}`;
       con.query(sqlinsert3, (err, result) => {
         obj.transportCount = result[0].total2;
-        const sqlinsert4 = `SELECT SUM(Balance) as Balance FROM students`;
+        const sqlinsert4 = `SELECT SUM(Balance) as Balance FROM students WHERE status=1 AND CollegeID=${data.user.id}`;
         con.query(sqlinsert4, (err, result) => {
           obj.totalBalance = result[0].Balance;
-          const sqlinsert5=`SELECT SUM(paid) as PaidBalance FROM feecollection`;
-          con.query(sqlinsert5,(err,result)=>{
-            obj.totalPaid=result[0].PaidBalance;
+          const sqlinsert5 = `SELECT SUM(fee.paid) as PaidBalance FROM feecollection fee LEFT JOIN students st ON fee.rollno=st.rollno WHERE DeleteFee=1 AND st.CollegeID=${data.user.id}`;
+          con.query(sqlinsert5, (err, result) => {
+            obj.totalPaid = result[0].PaidBalance;
             res.send(obj);
-          })
+          });
         });
       });
     });
   });
 });
 
-router.post("/addupdate", (req, res) => {
-  if (req.body.id !== "") {
-    const sqlinsert = `UPDATE students SET name="${req.body.name}",lname="${req.body.lname}",fname="${req.body.fname}",faccupation="${req.body.faccupation}",dob="${req.body.dob}",rollno="${req.body.rollno}",gender="${req.body.gender}",sectionid="${req.body.sectionid}",religion="${req.body.religion}",addid="${req.body.addid}",admissiondate="${req.body.admissiondate}",phone="${req.body.phone}",email="${req.body.email}",address="${req.body.address}",classid="${req.body.classid}","${admission.Balance}" WHERE id="${req.body.id}"`;
+router.post("/addupdate",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
+  const admission = req.body;
+  console.log(admission.discount);
+    var chars = "0123456789";
+    var InvoiceLength = 8;
+    var InvoiceNumber = "";
+    for (var i = 0; i <= InvoiceLength; i++) {
+      var randomNumber = Math.floor(Math.random() * chars.length);
+      InvoiceNumber += chars.substring(randomNumber, randomNumber + 1);
+    }
+  // return
+  if (admission.id !== "") {
+    const sqlinsert = `UPDATE students SET name="${admission.firstName}",fname="${admission.fname}",studentCNIC=${admission.studentCNIC},faccupation="${admission.foccupation}",dob="${admission.dob}",father_CNIC=${admission.fatherCNIC},gender='${admission.gender}',rollno=${admission.rollno},gender="${admission.gender}",sectionid=${admission.sectionid},religion="${admission.religion}",admissiondate="${admission.admissiondate}",phone=${admission.phone},email="${admission.email}",address1="${admission.address1}",address2="${admission.address2}",permanent_adress='${admission.permanentAddress}',discount=${admission.discount},classid=${admission.classid},Balance=${admission.balance} WHERE id="${admission.id}"`;
     // res.send(sqlinsert)
     con.query(sqlinsert, (err, result) => {
       if (err) throw err;
       res.send(result);
     });
   } else {
-    const admission = req.body;
-    const sqlinsert = `INSERT INTO students (name,lname,fname,faccupation,dob,rollno,gender,sectionid,religion,addid,admissiondate,phone,email,address,classid,Balance) VALUES ('${admission.name}','${admission.lname}','${admission.fname}','${admission.faccupation}','${admission.dob}','${admission.rollno}','${admission.gender}','${admission.sectionid}','${admission.religion}','${admission.addid}','${admission.admissiondate}','${admission.phone}','${admission.email}','${admission.address}','${admission.classid}','${admission.Balance}')`;
+    const sqlinsert = `INSERT INTO students (id,name,studentCNIC,fname,faccupation,fdesignation,FatherMonthly_income,Relation_with_father,f_Email,father_CNIC,F_phone,dob,rollno,gender,sectionid,religion,addid,admissiondate,phone,email,address1,address2,zipcode,discount,permanent_adress,classid,Balance,CollegeID,status) VALUES (NULL,'${admission.firstName}',${admission.studentCNIC},'${admission.fname}','${admission.foccupation}','${admission.designation}',${admission.monthlyIncome},'${admission.relation}','${admission.f_Email}',${admission.fatherCNIC},${admission.fatherPhoneNumer},'${admission.dob}',${admission.rollno},'${admission.gender}',${admission.sectionid},'${admission.religion}',${InvoiceNumber},'${admission.admissiondate}',${admission.phone},'${admission.email}','${admission.address1}','${admission.address2}',${admission.zipcode},${admission.discount},'${admission.permanentAddress}',${admission.classid},${admission.balance},${data.user.id},1)`;
 
     con.query(sqlinsert, (error, result) => {
       // console.log("resu", result);
@@ -80,17 +87,49 @@ router.post("/addupdate", (req, res) => {
   }
 });
 
-router.get("/Collection", (req, res) => {
-  const sqlinsert = `SELECT gender, count(*) as total FROM students GROUP By gender`;
+router.get("/Collection",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
+  const sqlinsert = `SELECT gender, count(*) as total FROM students WHERE status=1 AND CollegeID=${data.user.id} GROUP By gender`;
   con.query(sqlinsert, (er, result) => {
     const result2 = JSON.stringify(result);
     res.send(result2);
   });
 });
 
+router.get("/Collection/graph",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
 
-router.get("/Collection/graph", (req, res) => {
-  const id=req.query
+  const id = req.query;
+  console.log(id.yearid);
+  const sqlinsert = `SELECT
+    SUM(paid) AS montlyPaidGrapgh,
+    YEAR(DATE) AS YEAR,
+    MONTH(DATE) AS month
+FROM
+    feecollection
+     LEFT JOIN students st ON feecollection.rollno=st.rollno
+  WHERE YEAR(DATE) =${id.yearid} AND DeleteFee=1 AND st.CollegeID=${data.user.id}
+  
+GROUP BY
+    YEAR(DATE),
+    MONTH(DATE)
+ORDER BY
+    YEAR(DATE),
+    MONTH(DATE) `;
+   
+  con.query(sqlinsert, (err, result) => {
+    if(err) throw err
+     console.log(sqlinsert);
+    //  return;
+    const result2 = JSON.stringify(result);
+    res.send(result2);
+  });
+});
+
+router.get("/Collection/graphs",verifyToken, (req, res) => {
+  const id = req.query;
+  console.log(id)
   console.log(id);
   const sqlinsert = `SELECT
     SUM(paid) AS montlyPaidGrapgh,
@@ -99,7 +138,6 @@ router.get("/Collection/graph", (req, res) => {
 FROM
     feecollection
   WHERE YEAR(DATE) =${id.yearid}
-  
 GROUP BY
     YEAR(DATE),
     MONTH(DATE)
@@ -112,35 +150,28 @@ ORDER BY
   });
 });
 
-router.get("/Collection/graphs", (req, res) => {
-  const id= req.query;
-  console.log(id)
-  const sqlinsert = `SELECT
-    SUM(paid) AS montlyPaidGrapgh,
-    YEAR(DATE) AS YEAR,
-    MONTH(DATE) AS month
-FROM
-    feecollection
-  WHERE YEAR(DATE) =${id.yearid}
-GROUP BY
-    YEAR(DATE),
-    MONTH(DATE)
-ORDER BY
-    YEAR(DATE),
-    MONTH(DATE) `;
-  con.query(sqlinsert, (er, result) => {
-    const result2 = JSON.stringify(result);
-    res.send(result2);
-  });
-});
-router.delete("/delete", (req, res) => {
-  const Id = req.body.id;
-  // console.log(id)
-  const sqlinsert = `DELETE FROM students WHERE id IN (${Id})`;
+
+router.get("/studentTransection/:rollno",verifyToken,(req,res)=>{
+
+  //we need to check sum of fee at one column this is error check it leter
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
+  const Report = req.params.rollno;
+  const sqlinsert = `SELECT fee.*,st.Balance,st.discount,st.id as StudentID ,SUM(fee.paid)as paid FROM feecollection fee LEFT JOIN students st ON fee.rollno=st.rollno WHERE fee.rollno=${Report} AND  CollegeID=${data.user.id} `;
+  console.log(sqlinsert)
+  con.query(sqlinsert,(err,result)=>{
+    if(err) throw new Error()
+    res.send(result)
+  })
+})
+router.put("/del",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
+  const Id = req.body.data.id;
+  const sqlinsert = `UPDATE students SET status=0  WHERE id IN (${Id})  AND  CollegeID=${data.user.id}`;
   con.query(sqlinsert, (err, result) => {
     if (err) throw err;
     res.send(result);
   });
 });
-
-module.exports = router;
+  module.exports = router;

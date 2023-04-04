@@ -5,18 +5,26 @@ const cors = require("cors");
 router.use(cors());
 
 var con = require("../../db/Db_connection");
+const { verifyToken } = require("../Middleware/Jwt");
 
-router.get("/subjects", (req, res) => {
-  const sqlinsert = "SELECT * FROM subjects WHERE 1";
+router.get("/subjects", verifyToken,(req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
+  console.log(data)
+  const sqlinsert = `SELECT * FROM subjects WHERE status=1 AND  CollegeID=${data.user.id}`;
+  console.log(sqlinsert)
+  // return
   con.query(sqlinsert, (err, result) => {
     const result2 = JSON.stringify(result);
     res.send(result2);
   });
 });
 
-router.post("/api/subjects", (req, res) => {
+router.post("/api/subjects",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
   const book = req.body;
-  const sqlinsert = `SELECT COUNT (*) as total FROM subjects WHERE subjectName='${book.subjectName}'`;
+  const sqlinsert = `SELECT COUNT (*) as total FROM subjects WHERE subjectName='${book.subjectName} AND  CollegeID=${data.user.id}'`;
   con.query(sqlinsert, (err, result) => {
     const result2 = JSON.parse(JSON.stringify(result))[0];
 
@@ -31,41 +39,28 @@ router.post("/api/subjects", (req, res) => {
       });
     } else {
       // const subject = req.body;
-      const sqlinsert = `INSERT INTO subjects ( subjectName, subjectType, subjectCode) VALUES ( '${book.subjectName}', '${book.subjectType}', '${book.subjectCode}')`;
+      const sqlinsert = `INSERT INTO subjects ( subjectName, subjectType, subjectCode,status,CollegeID) VALUES ( '${book.subjectName}', '${book.subjectType}', '${book.subjectCode}',1, ${data.user.id})`;
 
       con.query(sqlinsert, (err, result) => {
         res.send({ message: "Book Added", stutus: 200 });
       });
     }
-    //   }else if(req.body.id !== ""){
-    //       const sqlinsert = `UPDATE subjects SET subjectName="${req.body.subjectName}" , subjectType="${req.body.subjectType}" , subjectCode="${req.body.subjectCode}" WHERE id="${req.body.id}"`;
-    //       //  return res.send(sqlinsert)
-    //       con.query(sqlinsert, (err, result) => {
-    //         if (err) throw err;
-    //         res.send({ message: "Books Updated", status: 200 });
-    //       });
-    //   }
-    // else {
-    //       const subject = req.body;
-    //       const sqlinsert = `INSERT INTO subjects ( subjectName, subjectType, subjectCode) VALUES ( '${subject.subjectName}', '${subject.subjectType}', '${subject.subjectCode}')`;
-
-    //       con.query(sqlinsert, (err, result) => {
-    //         res.send({ message: "Book Added", stutus: 200 });
-    //       });
-    //     }
   });
 });
 
-router.get("/subjectgroup_List", (req, res) => {
-  const sqlinsert =
-    "SELECT sG.*, cl.className as class, ses.year as year FROM subjectgroup sG LEFT JOIN class cl ON sG.classid=cl.id LEFT JOIN sessions ses ON sG.yearid=ses.id";
+router.get("/subjectgroup_List",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
 
-  // `SELECT sG.name,sessions.year as ses,sG.subjectCode,class.className ,  GROUP_CONCAT(subject) AS subjects FROM subjectgroup sG JOIN class ON sG.classid=class.id JOIN sessions ON sG.yearid=sessions.id WHERE sG.classid=9`
+  const sqlinsert =
+    `SELECT sG.*, cl.className as class, ses.year as year FROM subjectgroup sG LEFT JOIN class cl ON sG.classid=cl.id LEFT JOIN sessions ses ON sG.yearid=ses.id WHERE sG.status=1 AND sG.CollegeID=${data.user.id}`;
+
   con.query(sqlinsert, (err, result) => {
     const result2 = JSON.parse(JSON.stringify(result));
 
     const output = result2.reduce((acc, item) => {
-      const element = acc.find((elem) => elem.classid == item.classid);
+      const element = acc.find(
+        (elem) => elem.classid == item.classid && elem.name == item.name
+      ); ;
       if (element) {
         element.subject.push(item.subject);
       } else {
@@ -286,6 +281,8 @@ router.get("/subjectgroup_List", (req, res) => {
 });
 
 router.delete("/del/subject/:id", (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
   const ID = req.params.id;
 
   const sqlinsert = `DELETE FROM subjects WHERE id=${ID}`;
@@ -297,9 +294,11 @@ router.delete("/del/subject/:id", (req, res) => {
   });
 });
 
-router.post("/subjectGroup", (req, res) => {
+router.post("/subjectGroup",verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
   if (req.body.id !== "") {
-    const sqlinsert = `DELETE FROM subjectgroup WHERE classid=${req.body.classid}`;
+    const sqlinsert = `DELETE FROM subjectgroup WHERE classid=${req.body.classid} AND name='${req.body.name}' AND CollegeID=${data.user.id}`;
     con.query(sqlinsert, (err, result) => {
       if (err) throw err;
     });
@@ -307,7 +306,7 @@ router.post("/subjectGroup", (req, res) => {
     const subject = req.body;
 
     subject.subject.forEach((element) => {
-      const sqlinsert = `INSERT INTO subjectgroup ( name,yearid,classid,subject,subjectCode) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.classid}','${element}','${subject.subjectCode}')`;
+      const sqlinsert = `INSERT INTO subjectgroup ( name,yearid,classid,subject,subjectCode,status,CollegeID) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.classid}','${element}','${subject.subjectCode}',1,${data.user.id})`;
       con.query(sqlinsert, (err, result) => {
         if (err) throw err;
       });
@@ -321,7 +320,7 @@ router.post("/subjectGroup", (req, res) => {
 
 
     subject.subject.forEach((element) => {
-      const sqlinsert = `INSERT INTO subjectgroup ( name,yearid,classid,subject,subjectCode) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.classid}','${element}','${subject.subjectCode}')`;
+      const sqlinsert = `INSERT INTO subjectgroup ( name,yearid,classid,subject,subjectCode,status,CollegeID) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.classid}','${element}','${subject.subjectCode}',1,${data.user.id})`;
       con.query(sqlinsert, (err, result) => {
         if (err) throw err;
       });

@@ -4,80 +4,24 @@ const router = express.Router();
 const date = require("date-and-time");
 
 router.use(cors());
-
 var con = require("../../db/Db_connection");
+const PaidMail = require("../utils/PaidEmail");
+const { verifyToken } = require("../Middleware/Jwt");
+const SendSms = require("../utils/SendSMS");
 
-router.get("/fee/dataget", (req, res) => {
-  // [
-  //   {
-  //     id: 8,
-  //     name: "Junaid",
-  //     lname: "Ali",
-  //     fname: "Tilawat khan",
-  //     faccupation: "unknow",
-  //     dob: "1995-12-31",
-  //     rollno: 2,
-  //     gender: "male",
-  //     sectionid: "3",
-  //     religion: "Cristion",
-  //     addid: "12",
-  //     admissiondate: "2022-09-27",
-  //     phone: "0312 0914180",
-  //     email: "uamjad508@gmail.com",
-  //     address: "swabi main road, 12",
-  //     classid: "8",
-  //     Balance: 50000,
-  //     className: "two",
-  //     secname: "Section C",
-  //     balance: 30000,
-  //     Paid: 20000,
-  //   },
-  //   {
-  //     id: 8,
-  //     name: "Junaid",
-  //     lname: "Ali",
-  //     fname: "Tilawat khan",
-  //     faccupation: "unknow",
-  //     dob: "1995-12-31",
-  //     rollno: 2,
-  //     gender: "male",
-  //     sectionid: "3",
-  //     religion: "Cristion",
-  //     addid: "12",
-  //     admissiondate: "2022-09-27",
-  //     phone: "0312 0914180",
-  //     email: "uamjad508@gmail.com",
-  //     address: "swabi main road, 12",
-  //     classid: "8",
-  //     Balance: 50000,
-  //     className: "two",
-  //     secname: "Section C",
-  //     balance: 30000,
-  //     Paid: 20000,
-  //   },
-  // ]
+router.get("/fee/dataget", verifyToken, (req, res) => {
+  const Tokendata = { user: { id: req.userId, institute_name: req.institute } };
+
   const params = req.query;
 
-  const sqlinsert = `SELECT
-    stu.*,
-    c.className,
-    sec.name as secname,
-    sec.id as sectId,
-   FEE.balance as balance,
-    FEE.paid as Paid
-FROM
-    students stu
-
-LEFT JOIN class c ON stu.classid = c.id
-LEFT JOIN sections sec ON stu.sectionid = sec.id
-LEFT JOIN feecollection FEE ON stu.rollno=FEE.rollno
-WHERE
-  stu.classid=${params.classid} AND stu.sectionid=${params.sectionid}    
- `;
+  const sqlinsert = `SELECT stu.*, c.className,stu.F_phone, sec.name as secname,stu.email as Email, sec.id as sectId, FEE.balance as balance, FEE.paid as Paid FROM students stu LEFT JOIN class c ON stu.classid = c.id LEFT JOIN sections sec ON stu.sectionid = sec.id LEFT JOIN feecollection FEE ON stu.rollno=FEE.rollno AND stu.classid=FEE.classid AND stu.sectionid=FEE.sectionid WHERE stu.classid=${params.classid} AND stu.sectionid=${params.sectionid}  AND stu.status=1 AND stu.CollegeID=${Tokendata.user.id} `;
+  console.log(sqlinsert)
   con.query(sqlinsert, (err, result) => {
+    if (err) throw err;
+    // console.log(sqlinsert);
     const result2 = JSON.parse(JSON.stringify(result));
-
     const output = result2.reduce((acc, current) => {
+      // console.log(acc);
       const {
         id,
         name,
@@ -86,9 +30,11 @@ WHERE
         secname,
         className,
         Balance,
-        lname,
+        F_phone,
+        discount,
         classid,
         rollno,
+        email,
         sectId,
       } = current;
       const previousRecord = acc[id];
@@ -101,8 +47,10 @@ WHERE
             className,
             sectId,
             rollno,
+            F_phone,
+            email,
             classid,
-            lname,
+            discount: discount,
             Paid: previousRecord.Paid + Paid,
             Balance: previousRecord.Balance - Paid,
           },
@@ -116,126 +64,67 @@ WHERE
             secname,
             className,
             classid,
+            email,
             sectId,
             rollno,
-            lname,
+            F_phone,
             TotalFee: Balance,
             Paid: Paid,
-            Balance: Balance - Paid,
+            discount: discount,
+            Balance: Balance - discount - Paid,
           },
         };
       }
     }, {});
     res.send(output);
   });
-  return;
-  const data = [
-    //   ({
-    //     id: "1",
-    //     name: "Maya Mahardhani",
-    //     payment_amount: 100,
-    //     sku: "ST001802027",
-    //     seq: "1",
-    //   },
-    //   {
-    //     id: "1",
-    //     name: "Maya Mahardhani",
-    //     payment_amount: 50,
-    //     sku: "ST000703044",
-    //     seq: "2",
-    //   }
-    //  )
-    {
-      id: 8,
-      name: "Junaid",
-      rollno: 2,
-      classid: "8",
-      Balance: 50000,
-      className: "two",
-      secname: "Section C",
-      balance: 50000,
-      Paid: 20000,
-    },
-    {
-      id: 8,
-      name: "Junaid",
-      rollno: 2,
-      classid: "8",
-      Balance: 30000,
-      className: "two",
-      secname: "Section C",
-      balance: 30000,
-      Paid: 1000,
-    },
-    {
-      id: 8,
-      name: "Junaid",
-      rollno: 2,
-      classid: "8",
-      Balance: 29000,
-      className: "two",
-      secname: "Section C",
-      balance: 29000,
-      Paid: 1000,
-    },
-    {
-      id: 8,
-      name: "Junaid",
-      rollno: 2,
-      classid: "8",
-      Balance: 28000,
-      className: "two",
-      secname: "Section C",
-      balance: 28000,
-      Paid: 10000,
-    },
-  ];
-  const output2 = data.reduce((acc, current) => {
-    const { id, name, Paid, balance, Balance } = current;
-    const previousRecord = acc[id];
-    if (typeof previousRecord === "object") {
-      return {
-        ...acc,
-        [id]: {
-          ...previousRecord,
-          Paid: previousRecord.Paid + Paid,
-          Balance: previousRecord.Balance - Paid,
-        },
-      };
-    } else {
-      return {
-        ...acc,
-        [id]: {
-          id,
-          name,
-          TotalFee: Balance,
-          Paid: Paid,
-          Balance: Balance - Paid,
-        },
-      };
-    }
-  }, {});
-  res.send(output2);
-  return;
 });
 
-router.post("/fee/collecetion", (req, res) => {
-  const Fee = req.body;
-  // console.log(Fee) 
-  const d = date.format(new Date(Fee.date), "YYYY/MM/DD");
-  const sqlinsert = `INSERT INTO feecollection (rollno ,name, classid, sectionid, feetype, payduration, totalfee, balance, paid, date,paymethod, detail) VALUES ('${Fee.rollno}','${Fee.name}','${Fee.class}','${Fee.sectId}','${Fee.feetype}','${Fee.payduration}','${Fee.totalFee}','${Fee.balance}','${Fee.paid}','${d}','${Fee.paymethod}','${Fee.detail}')`;
+router.post("/fee/collecetion", verifyToken, async (req, res) => {
+  const Tokendata = { user: { id: req.userId, institute_Name: req.institute ,email:req.email} };
 
+  const Fee = req.body;
+  const RemaingFee=Fee.balance-Fee.paid
+  console.log("umair",RemaingFee)
+  var chars = "0123456789";
+  var InvoiceLength = 8;
+  var InvoiceNumber = "";
+  for (var i = 0; i <= InvoiceLength; i++) {
+    var randomNumber = Math.floor(Math.random() * chars.length);
+    InvoiceNumber += chars.substring(randomNumber, randomNumber + 1);
+  }
+  // console.log(InvoiceNumber);
+  const d = date.format(new Date(Fee.date), "YYYY/MM/DD");
+  const sqlinsert = `INSERT INTO feecollection (rollno ,name, classid, sectionid, feetype, payduration, totalfee, balance, paid, date,InvoiceNumber,paymethod, detail,DeleteFee) VALUES ('${Fee.rollno}','${Fee.name}','${Fee.class}','${Fee.sectId}','${Fee.feetype}','${Fee.payduration}','${Fee.totalFee}','${Fee.balance}','${Fee.paid}','${d}','${InvoiceNumber}','${Fee.paymethod}','${Fee.detail}','${Fee.status}') `;
+  await PaidMail({
+    paid: req.body.paid,
+    RollNo: req.body.rollno,
+    RemaingFee: RemaingFee,
+    Balance:req.body.balance,
+    Date:req.body.date,
+    email:req.body.email,
+    Collegeemail:Tokendata.user.email,
+    School:Tokendata.user.institute_Name,
+    Type:req.body.feetype,
+  });
+  await SendSms({
+    institute_Name: Tokendata.user.institute_Name,
+    paid: req.body.paid,
+    RemaingFee: RemaingFee,
+    contactNo: req.body.F_phone,
+  });
   con.query(sqlinsert, (err, result) => {
-    console.log("result", result);
     if (err) throw err;
     res.send({ message: "Fee Collected Successfully" });
   });
 });
 
-router.get("/single/:rollno", (req, res) => {
-  const feeSingleDate = req.params;
-  const sqlinsert = `SELECT * FROM  feecollection WHERE rollno=${feeSingleDate.rollno}`;
+router.get("/single/:rollno", verifyToken, (req, res) => {
+  const Tokendata = { user: { id: req.userId, institute_name: req.institute } };
 
+  const feeSingleDate = req.params;
+  const sqlinsert = `SELECT fee.* FROM  feecollection fee LEFT JOIN students stu ON fee.rollno=stu.rollno WHERE fee.rollno=${feeSingleDate.rollno} AND fee.DeleteFee=1 AND stu.CollegeId=${Tokendata.user.id}`;
+  console.log(sqlinsert);
   con.query(sqlinsert, (err, result) => {
     if (err) throw err;
     // var st={status:"paid"}
@@ -246,29 +135,32 @@ router.get("/single/:rollno", (req, res) => {
   });
 });
 
+router.get("/datewaise/transection", verifyToken, (req, res) => {
+  const Tokendata = { user: { id: req.userId, institute_name: req.institute } };
 
-
-router.get("/datewaise/transection",(req,res)=>{
-  const dates=req.query;
+  const dates = req.query;
   const sd = date.format(new Date(dates.startDate), "YYYY/MM/DD");
   const ed = date.format(new Date(dates.endDate), "YYYY/MM/DD");
   console.log(sd, ed);
 
-  const sqlinsert = `SELECT fee.rollno,fee.name,fee.paid,sec.name as section,cl.className as class FROM feecollection fee
-  left join sections sec on fee.sectionid=sec.id
-  left join class cl on fee.classid=cl.id
-
-  
-  WHERE date BETWEEN "${sd}" AND "${ed}"`;
-  // res.send(sqlinsert);
+  const sqlinsert = `SELECT fee.id,st.phone,fee.balance,fee.rollno,st.name AS name,fee.feetype,st.fname as fatherName,fee.paid,fee.InvoiceNumber,fee.paymethod,sec.name as section,cl.className as class,fee.date  FROM feecollection fee
+  left join sections sec on fee.sectionid=sec.id left join class cl on fee.classid=cl.id left join students st on fee.rollno=st.rollno  WHERE date BETWEEN "${sd}" AND "${ed}" AND fee.DeleteFee=1 AND st.status=1 AND st.CollegeID=${Tokendata.user.id} group by fee.id`;
   // return
-  con.query(sqlinsert,(err,result)=>{
-    if(err) throw err
-    res.send(result)
-  })
-})
+  console.log(sqlinsert);
+  con.query(sqlinsert, (err, result) => {
+    if (err) throw err;
+    res.send(result);
+  });
+});
+router.delete("/datewaise/transection/:id", verifyToken, (req, res) => {
+  const Tokendata = { user: { id: req.userId, institute_name: req.institute } };
 
-
-
-
+  const ID = req.params.id;
+  console.log(ID);
+  const sqlinsert = ` UPDATE  feecollection SET DeleteFee=0 where id=${ID}`;
+  con.query(sqlinsert, (err, result) => {
+    if (err) throw err;
+    res.send({ message: "Fee Recipt Deleted", status: 200 });
+  });
+});
 module.exports = router;
