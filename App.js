@@ -3,7 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
-const port = process.env.PORT;
+const PORT = process.env.PORT ||8000;
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
@@ -48,24 +48,24 @@ app.get("/", (req, res) => {
 
 // app.use(errorMiddleware)
 
-app.use((req, res, next) => {
-  const error = new Error("Not found");
-  error.status = 404;
-  next(error);
-});
+// app.use((req, res, next) => {
+//   const error = new Error("Not found");
+//   error.status = 404;
+//   next(error);
+// });
 
-app.use((error, req, res, next) => {
-  res.status(error.status || 500);
-  res.json({
-    error: {
-      message: error.message,
-    },
-  });
-});
+// app.use((error, req, res, next) => {
+//   res.status(error.status || 500);
+//   res.json({
+//     error: {
+//       message: error.message,
+//     },
+//   });
+// });
 const start = () => {
   try {
-    app.listen(port, () => {
-      console.log(`Server is listen at port ${port}`);
+    app.listen(PORT, () => {
+      console.log(`Server is listen at port ${PORT}`);
     });
   } catch {
     console.log("server error");
