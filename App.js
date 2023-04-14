@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
+const cool=require("cool-ascii-faces")
 const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT ||8000;
@@ -35,6 +36,9 @@ app.use("/register", Auth);
 app.use("/uploads", express.static("./uploads"));
 app.get("/", (req, res) => {
   res.send("Hello!");
+});
+app.get("/cool", (req, res) => {
+  res.send(cool());
 });
 
 // app.use((err, req, res, next) => {
