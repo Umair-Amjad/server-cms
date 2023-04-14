@@ -1,14 +1,13 @@
-require("dotenv").config()
-
+require("dotenv").config();
 const express = require("express");
-const bodyParser=require("body-parser");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT;
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
-const errorMiddleware=require("./controler/Middleware/ErrorHandler")
+const errorMiddleware = require("./controler/Middleware/ErrorHandler");
 const student = require("./controler/Studenets/Students");
 const StudentPromtions = require("./controler/Studenets/StudentPromtion");
 const teacher = require("./controler/teachers/Teachers");
@@ -18,7 +17,7 @@ const books = require("./controler/subjects/subject");
 const attendence = require("./controler/attendence/Attendence");
 const Fee = require("./controler/feeManagment/Fee");
 const Exams = require("./controler/Exams/Exams");
-const Finance =require("./controler/Finance/Finance")
+const Finance = require("./controler/Finance/Finance");
 const Auth = require("./controler/auth/Auth");
 
 // Routing
@@ -31,34 +30,46 @@ app.use("/tranport", transport);
 app.use("/class", room);
 app.use("/attendence", attendence);
 app.use("/exams", Exams);
-app.use("/finance",Finance)
-app.use("/register",Auth)
+app.use("/finance", Finance);
+app.use("/register", Auth);
+app.use("/uploads", express.static("./uploads"));
 app.get("/", (req, res) => {
-
   res.send("Hello!");
 });
 
-app.use((err, req, res, next) => {
-  // console.log(err);
-  err.statusCode = err.statusCode || 404;
-  err.message = err.message || "Internal Server Error";
-  res.status(err.statusCode).json({
-    message: err.message,
-  });
+// app.use((err, req, res, next) => {
+//   // console.log(err);
+//   err.statusCode = err.statusCode || 404;
+//   err.message = err.message || "Internal Server Error";
+//   res.status(err.statusCode).json({
+//     message: err.message,
+//   });
+// });
+
+// app.use(errorMiddleware)
+
+app.use((req, res, next) => {
+  const error = new Error("Not found");
+  error.status = 404;
+  next(error);
 });
 
-app.use(errorMiddleware)
-
-const start=()=>{
-try{
-
-  app.listen(port, () => {
-    console.log(`Server is listen at port ${port}`);
+app.use((error, req, res, next) => {
+  res.status(error.status || 500);
+  res.json({
+    error: {
+      message: error.message,
+    },
   });
-}catch{
-  console.log("server error")
-}
-}
-
+});
+const start = () => {
+  try {
+    app.listen(port, () => {
+      console.log(`Server is listen at port ${port}`);
+    });
+  } catch {
+    console.log("server error");
+  }
+};
 
 start();

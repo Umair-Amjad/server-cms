@@ -28,14 +28,21 @@ router.get("/api/attendenceList", verifyToken, (req, res) => {
   const params = req.query;
   const d = date.format(new Date(params.date), "YYYY/MM/DD");
   const endDates = date.format(new Date(params.endDate), "YYYY/MM/DD");
+  console.log(endDates)
   //   const sqlinsert = `SELECT att.*,cl.className as class,sec.name as section  FROM attendence att LEFT JOIN class cl ON att.classid=cl.id  LEFT JOIN sections sec ON att.sectionid=sec.id
   //  WHERE cl.classid=${params.classid} AND sec.sectionid=${params.sectionid} AND date=${params.data}`;
   let att = "";
   let startDate = d;
   let EndDate = "";
+  let singleDate="";
 
-  if (endDates != "") {
-    EndDate = `OR att.date BETWEEN ${`"${startDate}"`} AND ${`"${endDates}"`}`;
+  if (endDates == "0NaN/aN/aN") {
+    singleDate = `AND att.date=${`"${endDates ? d : "d"}"`}`;
+  }
+  if (endDates != "" && endDates != "0NaN/aN/aN") {
+    EndDate = `${
+      endDates ? "AND" : ""
+    }  att.date BETWEEN ${`"${startDate}"`} AND ${`"${endDates}"`}`;
   }
   if (params.attendence_list != "5") {
     att = `AND att.attendence_list=${params.attendence_list}`;
@@ -65,7 +72,9 @@ LEFT JOIN sections sec ON att.sectionid = sec.id
 
 WHERE
   att.classid=${params.classid} AND att.sectionid=${params.sectionid}    
-     AND att.date=${`"${d}"`} ${att} ${EndDate} And st.CollegeID=${data.user.id} GROUP BY att.id`;
+     ${singleDate} ${att} ${EndDate} And st.CollegeID=${
+    data.user.id
+  } GROUP BY att.id`;
   con.query(sqlinsert, (err, result) => {
     if(err) throw err
     console.log(sqlinsert)

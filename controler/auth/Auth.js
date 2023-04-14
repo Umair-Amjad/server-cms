@@ -6,69 +6,82 @@ const router = express.Router();
 
 router.use(cors());
 var con = require("../../db/Db_connection");
-const { verifyToken } = require("../Middleware/Jwt");
-const SendMail = require("../utils/SendMail");
 const nodemailer = require("nodemailer");
-const  SendSms  = require("../utils/SendSMS");
+const SendSms = require("../utils/SendSMS");
+const upload = require("../multer/multer");
 
-router.post("/api", async (req, res) => {
 
-   const date=new Date().toISOString().slice(0, -5).replace("T", " ");
+// img storage confing
+
+
+
+router.post("/api",upload.single("photo"),  (req, res) => {
+    const { filename } = req.file;
+
+  console.log("file",filename);
   console.log(req.body);
-  con.query(
-    `SELECT * FROM schoolregisteration WHERE LOWER(email)=LOWER(${con.escape(
-      req.body.email
-    )})`,
-    (err, result) => {
-      if (result.length) {
-        return res.status(409).send({
-          msg: "This User already in use!",
-        });
-      } else {
-        //hash pass
-        bcrypt.hash(req.body.password, 10, (err, hash) => {
-          if (err) {
-            return res.status(500).send({
-              msg: err,
-            });
-          } else {
-            //has hased pss
-            con.query(
-              `INSERT INTO schoolregisteration (first_name,last_name,institute_Name,contact_no, email, password,CreatedDate,isAdmin,isVerified) VALUES ('${
-                req.body.name
-              }','${req.body.lastname}','${req.body.InstituteName}',${
-                req.body.contact
-              }, ${con.escape(req.body.email)},${con.escape(
-                hash
-              )},'${date}',1,0)`,
-              async (err, result) => {
-                if (err) {
-                  return res.status(400).send({
-                    msg: err,
+  console.log(req.file);
+
+  // return
+  try {
+    const date = new Date().toISOString().slice(0, -5).replace("T", " ");
+    con.query(
+      `SELECT * FROM schoolregisteration WHERE LOWER(email)=LOWER(${con.escape(
+        req.body.email
+      )})`,
+      (err, result) => {
+        if (result.length) {
+          return res.status(409).send({
+            msg: "This User already in use!",
+          });
+        } else {
+          //hash pass
+          bcrypt.hash(req.body.password, 10, (err, hash) => {
+            if (err) {
+              return res.status(500).send({
+                msg: err,
+              });
+            } else {
+              //has hased pss
+              con.query(
+                `INSERT INTO schoolregisteration (first_name,last_name,institute_Name,contact_no, email, password,schoolimage,CreatedDate,isAdmin,isVerified) VALUES ('${
+                  req.body.name
+                }','${req.body.lastname}','${req.body.InstituteName}',${
+                  req.body.contact
+                }, ${con.escape(req.body.email)},${con.escape(hash)},'${
+                  filename
+                }','${date}',1,0)`,
+                async (err, result) => {
+                  if (err) {
+                    return res.status(400).send({
+                      msg: err,
+                    });
+                  }
+
+                  // await SendMail({
+                  //   username: req.body.name,
+                  //   email: req.body.email,
+                  //   instituteName: req.body.InstituteName,
+                  //   contactNo: req.body.contact,
+                  // });
+
+                  await SendSms({
+                    contactNo: req.body.contact,
+                    text: "Your Account Has been REgister Please wait until your account is Verify",
+                  });
+                  return res.status(201).send({
+                    msg: "The User Has Been Register",
                   });
                 }
-
-                // await SendMail({
-                //   username: req.body.name,
-                //   email: req.body.email,
-                //   instituteName: req.body.InstituteName,
-                //   contactNo: req.body.contact,
-                // });
-
-                await SendSms({
-                  contactNo: req.body.contact,
-                  text: "Your Account Has been REgister Please wait until your account is Verify",
-                });
-                return res.status(201).send({
-                  msg: "The User Has Been Register",
-                });
-              }
-            );
-          }
-        });
+              );
+            }
+          });
+        }
       }
-    }
-  );
+    );
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 router.post("/login", (req, res) => {
@@ -251,11 +264,10 @@ router.post("/:id/:token", async (req, res) => {
   }
 });
 
-router.get("/umair",async (req, res) => {
+router.get("/umair", async (req, res) => {
+  const { number, text } = req.query;
 
-  const {number,text}=req.query
-
- await SendSms()
+  await SendSms();
   // res.send({ hi: "hello umair" });
 });
 
