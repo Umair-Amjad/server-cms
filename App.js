@@ -34,7 +34,7 @@ app.use("/exams", Exams);
 app.use("/finance", Finance);
 app.use("/register", Auth);
 app.use("/uploads", express.static("./uploads"));
-app.get("/", (req, res) => {
+app.get("/s", (req, res) => {
   res.send("Hello!");
 });
 app.get("/cool", (req, res) => {
