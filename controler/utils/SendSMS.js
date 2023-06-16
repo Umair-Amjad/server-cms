@@ -1,8 +1,5 @@
 var https = require("https");
 
-var APIKey = "350463bfeba50c87dbfcf31380cb026a";
-var receiver = "+923169526081";
-var sender = "8583";
 
 const SendSms = (paid,Rem) => {
 
@@ -15,13 +12,13 @@ const SendSms = (paid,Rem) => {
     port: 443,
     path:
       "/sendsms?hash=" +
-      APIKey +
+      (process.env.API_Key) +
       "&receivenum=" +
       paid.contactNo +
       "&sendernum=" +
-      encodeURIComponent(sender) +
+      encodeURIComponent(process.env.SMS_PORTNUMBER) +
       "&textmessage=" +
-      encodeURIComponent(paid.text?paid.text:textmessage),
+      encodeURIComponent(paid.text ? paid.text : textmessage),
     method: "GET",
     setTimeout: 30000,
   };
