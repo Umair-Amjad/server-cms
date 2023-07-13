@@ -7,15 +7,17 @@ const router = express.Router();
 router.use(cors());
 var con = require("../../db/Db_connection");
 const nodemailer = require("nodemailer");
-const SendSms = require("../utils/SendSMS");
+const sendMail = require("../utils/SendMail");
 const upload = require("../multer/multer");
+const AsyncError = require("../Middleware/AsyncError");
+const ErrorHandler = require("../utils/ErrorHandler");
 
 
 // img storage confing
 
 
 
-router.post("/api",upload.single("photo"),  (req, res) => {
+router.post("/api",upload.single("photo"),  AsyncError(async(req, res,next) => {
     const { filename } = req.file;
 
   console.log("file",filename);
@@ -58,17 +60,17 @@ router.post("/api",upload.single("photo"),  (req, res) => {
                     });
                   }
 
-                  // await SendMail({
-                  //   username: req.body.name,
-                  //   email: req.body.email,
-                  //   instituteName: req.body.InstituteName,
-                  //   contactNo: req.body.contact,
-                  // });
-
-                  await SendSms({
+                  await sendMail({
+                    username: req.body.name,
+                    email: req.body.email,
+                    instituteName: req.body.InstituteName,
                     contactNo: req.body.contact,
-                    text: "Your Account Has been REgister Please wait until your account is Verify",
                   });
+
+                  // await SendSms({
+                  //   contactNo: req.body.contact,
+                  //   text: "Your Account Has been REgister Please wait until your account is Verify",
+                  // });
                   return res.status(201).send({
                     msg: "The User Has Been Register",
                   });
@@ -80,12 +82,12 @@ router.post("/api",upload.single("photo"),  (req, res) => {
       }
     );
   } catch (err) {
-    console.log(err);
+    return next(new ErrorHandler("somthing went wrong",500))
   }
-});
+}));
 
 router.post("/login", (req, res) => {
-  console.log(req.body.email, req.body.password);
+  console.log(req.body, req.body.password);
   con.query(
     `SELECT * FROM schoolregisteration WHERE email=${con.escape(
       req.body.email
