@@ -7,6 +7,8 @@ const con = require("../../db/Db_connection");
 const { verifyToken } = require("../Middleware/Jwt");
 const upload = require("../multer/multer");
 
+// student complains
+
 router.get("/complaints", (req, res) => {
   // const sqlinsert = `SELECT comp.*,st.name, CASE WHEN comp.category=1 then 'Academic Issues' WHEN comp.category=2 then 'Behavior Issues' WHEN comp.category=3 then 'Harassment or Bullying' WHEN comp.category=4 then 'Safety Issues' END as 'complainCategory', CASE WHEN comp.compaintstatus=1 Then 'Pending' WHEN comp.compaintstatus=0 Then 'Completed' END as 'status' from complaints comp LEFT JOIN students st on comp.complained_against=st.id where comp.CollegeID=1`;
   const sqlinsert = `SELECT comp.*,st.name,GROUP_CONCAT(st.name SEPARATOR ', ') AS concatenated_values, CASE WHEN comp.category=1 then 'Academic Issues' WHEN comp.category=2 then 'Behavior Issues' WHEN comp.category=3 then 'Harassment or Bullying' WHEN comp.category=4 then 'Safety Issues' END as 'complainCategory', CASE WHEN comp.compaintstatus=1 Then 'Pending' WHEN comp.compaintstatus=0 Then 'Completed' END as 'status' from complaints comp LEFT JOIN students st on comp.complained_against=st.id where comp.CollegeID=1  GROUP BY complaint_no `;
@@ -70,5 +72,9 @@ router.put("/complaints-resove",(req,res)=>{
     if(err) throw err;
     res.status(200).send("thnand")
   })
-})
+});
+
+//Teacher complains
+
+
 module.exports = router;

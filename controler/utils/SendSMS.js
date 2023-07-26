@@ -3,7 +3,9 @@ var https = require("https");
 
 const SendSms = (paid,Rem) => {
 
-    console.log(paid);
+    // console.log("numer",paid);
+
+    // return
     var textmessage = `You have Paid ${paid.paid} and your remaining Fee is ${paid.RemaingFee} FROM ${paid.institute_Name}`;
     console.log(textmessage);
 
