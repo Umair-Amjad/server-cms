@@ -123,7 +123,7 @@ router.get("/single/:rollno", verifyToken, (req, res) => {
   const Tokendata = { user: { id: req.userId, institute_name: req.institute } };
 
   const feeSingleDate = req.params;
-  const sqlinsert = `SELECT fee.* FROM  feecollection fee LEFT JOIN students stu ON fee.rollno=stu.rollno WHERE fee.rollno=${feeSingleDate.rollno} AND fee.DeleteFee=1 AND stu.CollegeId=${Tokendata.user.id}`;
+  const sqlinsert = `SELECT fee.*,stu.CollegeID  FROM  feecollection fee LEFT JOIN students stu ON fee.rollno=stu.rollno WHERE fee.rollno=${feeSingleDate.rollno} AND fee.DeleteFee=1 AND stu.CollegeID=${Tokendata.user.id} GROUP BY fee.id;`;
   console.log(sqlinsert);
   con.query(sqlinsert, (err, result) => {
     if (err) throw err;

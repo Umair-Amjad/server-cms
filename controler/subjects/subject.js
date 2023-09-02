@@ -24,13 +24,15 @@ router.post("/api/subjects",verifyToken, (req, res) => {
   const data = { user: { id: req.userId, institute_name: req.institute } };
 
   const book = req.body;
+  console.log(book)
+  // return
   const sqlinsert = `SELECT COUNT (*) as total FROM subjects WHERE subjectName='${book.subjectName} AND  CollegeID=${data.user.id}'`;
   con.query(sqlinsert, (err, result) => {
     const result2 = JSON.parse(JSON.stringify(result))[0];
 
     if (result2.total > 0) {
       res.send({ message: "Already Exist", status: 400 });
-    } else if (book.id !== "") {
+    } else if (book.id !== "" && book.id !== null) {
       const sqlinsert = `UPDATE subjects SET subjectName="${book.subjectName}" , subjectType="${book.subjectType}" , subjectCode="${book.subjectCode}" WHERE id="${book.id}"`;
       //  return res.send(sqlinsert)
       con.query(sqlinsert, (err, result) => {
@@ -302,30 +304,24 @@ router.post("/subjectGroup",verifyToken, (req, res) => {
     con.query(sqlinsert, (err, result) => {
       if (err) throw err;
     });
-
     const subject = req.body;
-
     subject.subject.forEach((element) => {
       const sqlinsert = `INSERT INTO subjectgroup ( name,yearid,classid,subject,subjectCode,status,CollegeID) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.classid}','${element}','${subject.subjectCode}',1,${data.user.id})`;
       con.query(sqlinsert, (err, result) => {
         if (err) throw err;
       });
     });
-
     res.send({ message: "Subject Assign To Class", stutus: 200 });
     // });
 
   } else {
     const subject = req.body;
-
-
     subject.subject.forEach((element) => {
       const sqlinsert = `INSERT INTO subjectgroup ( name,yearid,classid,subject,subjectCode,status,CollegeID) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.classid}','${element}','${subject.subjectCode}',1,${data.user.id})`;
       con.query(sqlinsert, (err, result) => {
         if (err) throw err;
       });
     });
-
     res.send({ message: "Subject Assign To Class", stutus: 200 });
     // const sqlinsert = `INSERT INTO subjects ( name,  yearid,class,subject) VALUES ( '${subject.name}',  '${subject.yearid}','${subject.class}','${subject.subject}')`;
 
@@ -335,7 +331,7 @@ router.post("/subjectGroup",verifyToken, (req, res) => {
 
   // });
 });
-
+// it should change for temporary delete
 router.delete("/subjectGrouped/delete/:classid", (req, res) => {
   const sqlinsert = `DELETE FROM subjectgroup WHERE classid=${req.params.classid}`;
   con.query(sqlinsert, (err, result) => {

@@ -38,7 +38,7 @@ router.get(
   "/list",
   verifyToken,
   AsyncError(async (req, res, next) => {
-    const { yearid } = req.query;
+    const { yearid=new Date().getFullYear() } = req.query;
     const data = { user: { id: req.userId, institute_name: req.institute } };
     try {
       // res.send("hello")

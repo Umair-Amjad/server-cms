@@ -17,14 +17,8 @@ const ErrorHandler = require("../utils/ErrorHandler");
 
 
 
-router.post("/api",upload.single("photo"),  AsyncError(async(req, res,next) => {
-    const { filename } = req.file;
-
-  console.log("file",filename);
-  console.log(req.body);
-  console.log(req.file);
-
-  // return
+router.post("/api", upload.single("photo"), AsyncError(async (req, res, next) => {
+  const { filename } = req.file;
   try {
     const date = new Date().toISOString().slice(0, -5).replace("T", " ");
     con.query(
@@ -46,12 +40,9 @@ router.post("/api",upload.single("photo"),  AsyncError(async(req, res,next) => {
             } else {
               //has hased pss
               con.query(
-                `INSERT INTO schoolregisteration (first_name,last_name,institute_Name,contact_no, email, password,schoolimage,CreatedDate,isAdmin,isVerified) VALUES ('${
-                  req.body.name
-                }','${req.body.lastname}','${req.body.InstituteName}',${
-                  req.body.contact
-                }, ${con.escape(req.body.email)},${con.escape(hash)},'${
-                  filename
+                `INSERT INTO schoolregisteration (first_name,last_name,institute_Name,contact_no, email, password,schoolimage,CreatedDate,isAdmin,isVerified) VALUES ('${req.body.name
+                }','${req.body.lastname}','${req.body.InstituteName}',${req.body.contact
+                }, ${con.escape(req.body.email)},${con.escape(hash)},'${filename
                 }','${date}',1,0)`,
                 async (err, result) => {
                   if (err) {
@@ -82,7 +73,7 @@ router.post("/api",upload.single("photo"),  AsyncError(async(req, res,next) => {
       }
     );
   } catch (err) {
-    return next(new ErrorHandler("somthing went wrong",500))
+    return next(new ErrorHandler("somthing went wrong", 500))
   }
 }));
 

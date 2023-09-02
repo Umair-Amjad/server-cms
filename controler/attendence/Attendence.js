@@ -12,7 +12,7 @@ router.get("/api/attendence", verifyToken,(req, res) => {
 
   const params = req.query;
 
-  const sqlinsert = `SELECT st.*, cl.className as class,sec.name as section FROM students st LEFT JOIN class cl ON st.classid=cl.id LEFT JOIN sections sec ON st.sectionid=sec.id  WHERE classid=${params.classid} AND sectionid=${params.sectionid} AND st.CollegeID=${data.user.id}`;
+  const sqlinsert = `SELECT st.*, cl.className as class,sec.name as section FROM students st LEFT JOIN class cl ON st.classid=cl.id LEFT JOIN sections sec ON st.sectionid=sec.id  WHERE classid=${params.classid} AND sectionid=${params.sectionid} AND st.status=1 And st.CollegeID=${data.user.id}`;
   console.log(sqlinsert)
   con.query(sqlinsert, (err, result) => {
     if(err) throw err;
@@ -72,7 +72,7 @@ LEFT JOIN sections sec ON att.sectionid = sec.id
 
 WHERE
   att.classid=${params.classid} AND att.sectionid=${params.sectionid}    
-     ${singleDate} ${att} ${EndDate} And st.CollegeID=${
+     ${singleDate} ${att} ${EndDate} And  st.CollegeID=${
     data.user.id
   } GROUP BY att.id`;
   con.query(sqlinsert, (err, result) => {

@@ -170,7 +170,16 @@ router.get("/graph", verifyToken, (req, res) => {
     // res.status(200).send(result);
   });
 });
-// income statment
+router.get("/analytic", verifyToken, (req, res) => {
+  const data = { user: { id: req.userId, institute_name: req.institute } };
+
+  const sqlinsert = `SELECT YEAR(admissiondate), SUM(CASE WHEN gender = 'female' AND YEAR(admissiondate) THEN 1 ELSE 0 END) AS female_count_2022, SUM(CASE WHEN gender = 'Male' AND YEAR(admissiondate) THEN 1 ELSE 0 END) AS male_count_2022, COUNT(*) AS total_registration_count FROM students WHERE status=1 GROUP BY YEAR(admissiondate);`;
+  con.query(sqlinsert, (err, result) => {
+    if (err) throw err;
+          res.status(200).send([...result])
+    });
+  });
+//  income statment
 // router.get("/graph2",verifyToken,(req,res)=>{
 //  const sqlinsert2 = `SELECT SUM(ex.amount) AS montlhyExpense,YEAR(ex.date) AS YEAR,ex.CollegeID FROM expenselist ex  WHERE ex.CollegeID=1 AND ex.status=1 GROUP by YEAR(ex.date) ORDER BY YEAR(ex.date)`;
 //  con.query(sqlinsert2, (err, result2) => {

@@ -16,6 +16,7 @@ const Finance = require("./controler/Finance/Finance");
 const Auth = require("./controler/auth/Auth");
 const sms = require("./controler/SMS/sms");
 const complains = require("./controler/Complaints/Complaint");
+const events = require("./controler/Events/Events");
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
@@ -39,6 +40,7 @@ app.use("/finance", Finance);
 app.use("/complains", complains);
 app.use("/single", sms);
 app.use("/register", Auth);
+app.use("/events", events);
 app.use("/uploads", express.static("./uploads"));
 
 // app.use("*",function(req,res){
