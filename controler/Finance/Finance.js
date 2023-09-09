@@ -173,7 +173,7 @@ router.get("/graph", verifyToken, (req, res) => {
 router.get("/analytic", verifyToken, (req, res) => {
   const data = { user: { id: req.userId, institute_name: req.institute } };
 
-  const sqlinsert = `SELECT YEAR(admissiondate), SUM(CASE WHEN gender = 'female' AND YEAR(admissiondate) THEN 1 ELSE 0 END) AS female_count_2022, SUM(CASE WHEN gender = 'Male' AND YEAR(admissiondate) THEN 1 ELSE 0 END) AS male_count_2022, COUNT(*) AS total_registration_count FROM students WHERE status=1 GROUP BY YEAR(admissiondate);`;
+  const sqlinsert = `SELECT YEAR(admissiondate) as Year, SUM(CASE WHEN gender = 'female' AND YEAR(admissiondate) THEN 1 ELSE 0 END) AS femaleCount, SUM(CASE WHEN gender = 'Male' AND YEAR(admissiondate) THEN 1 ELSE 0 END) AS maleCount, COUNT(*) AS total_registration_count FROM students WHERE status=1 GROUP BY YEAR(admissiondate);`;
   con.query(sqlinsert, (err, result) => {
     if (err) throw err;
           res.status(200).send([...result])
